@@ -1,2 +1,2 @@
-# billies-needle
-better than jimmies needle MAYBE
+# Billies-Needle
+I'm on a chromebook so this won't work right now but hopefully it will soon I'll try it.
