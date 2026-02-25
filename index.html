@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Billies Needle | Universal Injector</title>
+  <style>
+    body {
+      background: #0a0a0a;
+      color: #00ff41;
+      font-family: 'Courier New', Courier, monospace;
+      text-align: center;
+      padding-top: 50px;
+      line-height: 1.6;
+    }
+
+    .container {
+      border: 2px solid #00ff41;
+      display: inline-block;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+    }
+
+    h1 { font-size: 42px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 5px; }
+    p { color: #888; margin-bottom: 30px; }
+
+    .inject-btn {
+      display: inline-block;
+      padding: 15px 30px;
+      background: #00ff41;
+      color: #000;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 20px;
+      border-radius: 4px;
+      cursor: move;
+      transition: 0.3s;
+      border: 2px solid #00ff41;
+    }
+
+    .inject-btn:hover {
+      background: #000;
+      color: #00ff41;
+      box-shadow: 0 0 15px #00ff41;
+    }
+
+    .instructions {
+      margin-top: 30px;
+      font-size: 14px;
+      max-width: 500px;
+      text-align: left;
+      margin-left: auto;
+      margin-right: auto;
+      color: #00ff41;
+    }
+
+    code { background: #222; padding: 2px 5px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Billies Needle</h1>
+    <p>Advanced Memory Injection Tool for Scratch & TurboWarp</p>
+
+    <!-- The Drag and Drop Bookmarklet -->
+    <a id="inject" class="inject-btn" href="">DRAG TO BOOKMARKS</a>
+
+    <div class="instructions">
+        <strong>HOW TO USE:</strong>
+        <ol>
+            <li>Drag the green button above to your <code>Bookmarks Bar</code>.</li>
+            <li>Open any game on <a href="https://scratch.mit.edu" style="color:#fff">Scratch</a> or <a href="https://turbowarp.org" style="color:#fff">TurboWarp</a>.</li>
+            <li>Click the <code>Billies Needle</code> bookmark you just made.</li>
+            <li>The visual menu will appear. Search for variables or resize sprites live!</li>
+        </ol>
+    </div>
+</div>
+
+<script>
+(function() {
+    // URL to your raw injector.js on GitHub
+    const GITHUB_RAW_URL = "https://cdn.jsdelivr.net";
+
+    const bookmarklet = 
+        "javascript:(function(){" +
+        "   var s=document.createElement('script');" +
+        "   s.src='" + GITHUB_RAW_URL + "';" +
+        "   s.onerror=function(){alert('Billies Needle: Failed to load script. Check your connection.');};" +
+        "   document.body.appendChild(s);" +
+        "})();";
+
+    document.getElementById("inject").href = bookmarklet;
+})();
+</script>
+
+</body>
+</html>
