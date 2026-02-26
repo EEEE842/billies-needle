@@ -79,27 +79,35 @@
     document.onmousemove = (e) => { if (isDragging) { menu.style.left = (e.clientX + offset[0]) + 'px'; menu.style.top = (e.clientY + offset[1]) + 'px'; } };
     document.onmouseup = () => isDragging = false;
 
-    // --- ENGINE LOGIC ---
-    document.getElementById('speed-hack').oninput = (e) => {
-        const fps = Number(e.target.value);
-        if (vm.setFramerate) vm.setFramerate(fps);
-        else vm.runtime.currentStepTime = 1000 / fps;
-    };
-
+    // --- HARD FREEZE LOGIC ---
+    let originalStep = vm.runtime._step.bind(vm.runtime); 
     let isFrozen = false;
+
     document.getElementById('btn-freeze').onclick = function() {
         isFrozen = !isFrozen;
         if (isFrozen) {
-            vm.runtime.pause();
+            // Hijack the step function to stop execution
+            vm.runtime._step = function() { 
+                this.emit('RUNTIME_STEP_START');
+                this.emit('RUNTIME_STEP_END');
+            };
             this.innerText = "UNFREEZE ENGINE";
             this.style.color = "#ff4444";
             this.style.borderColor = "#ff4444";
         } else {
-            vm.runtime.resume();
+            // Restore original engine step
+            vm.runtime._step = originalStep;
             this.innerText = "FREEZE ENGINE";
             this.style.color = "#00ff41";
             this.style.borderColor = "#00ff41";
         }
+    };
+
+    // --- FPS / SPEED LOGIC ---
+    document.getElementById('speed-hack').oninput = (e) => {
+        const fps = Number(e.target.value);
+        if (vm.setFramerate) vm.setFramerate(fps);
+        else vm.runtime.currentStepTime = 1000 / fps;
     };
 
     // --- REFRESH FUNCTION ---
@@ -166,5 +174,5 @@
 
     document.getElementById('needle-search').oninput = updateNeedle;
     updateNeedle();
-    console.log("Billies Needle: MISC Section and Freeze Active.");
+    console.log("Billies Needle: MISC Section and Hard Freeze Active.");
 })();
