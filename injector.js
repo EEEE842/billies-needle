@@ -15,7 +15,6 @@
         }
         return null;
     }
-
     const vm = getVM();
     if (!vm) return alert("Billies Needle: VM not found. Open a project first!");
 
@@ -28,7 +27,6 @@
         z-index: 999999; font-family: 'Courier New', monospace; overflow-y: auto;
         box-shadow: 0 0 15px rgba(0,255,65,0.4); padding: 12px;
     `;
-
     menu.innerHTML = `
         <div id="drag-header" style="cursor: move; font-weight: bold; border-bottom: 1px solid #00ff41; padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; font-size: 14px;">
             <span>[ BILLIES NEEDLE ]</span>
@@ -36,20 +34,17 @@
         </div>
         
         <div style="margin-bottom: 10px;">
-            <label style="font-size: 11px;">GAME SPEED (TEMPO)</label>
-            <input type="range" id="speed-hack" min="10" max="500" value="100" style="width:100%; accent-color:#00ff41;">
+            <label style="font-size: 11px;">GAME SPEED (FPS)</label>
+            <input type="range" id="speed-hack" min="1" max="120" value="30" style="width:100%; accent-color:#00ff41;">
         </div>
-
-        <input type="text" id="needle-search" placeholder="Search variables..." style="width: 100%; background: #000; color: #00ff41; border: 1px solid #00ff41; padding: 4px; margin-bottom: 10px; font-size: 12px;">
-
+        <input type="text" id="needle-search" placeholder="Search variables/sprites..." style="width: 100%; background: #000; color: #00ff41; border: 1px solid #00ff41; padding: 4px; margin-bottom: 10px; font-size: 12px; box-sizing: border-box;">
         <div id="needle-content">
-            <div style="font-weight:bold; font-size:12px; text-decoration:underline;">MEMORY MAP (VARS)</div>
+            <div style="font-weight:bold; font-size:12px; text-decoration:underline; margin-bottom: 4px;">MEMORY MAP (VARS)</div>
             <div id="needle-vars" style="margin-bottom: 10px;"></div>
-            <div style="font-weight:bold; font-size:12px; text-decoration:underline;">SPRITE CLUSTERS</div>
+            <div style="font-weight:bold; font-size:12px; text-decoration:underline; margin-bottom: 4px;">SPRITE CLUSTERS</div>
             <div id="needle-sprites"></div>
         </div>
     `;
-
     document.body.appendChild(menu);
 
     // --- DRAG LOGIC ---
@@ -61,8 +56,13 @@
 
     // --- SPEED HACK LOGIC ---
     document.getElementById('speed-hack').oninput = (e) => {
-        // Manipulates the internal runtime step 
-        vm.runtime.setTempo(Number(e.target.value)); 
+        const fps = Number(e.target.value);
+        // TurboWarp has a native setFramerate, standard Scratch relies on currentStepTime
+        if (typeof vm.setFramerate === 'function') {
+            vm.setFramerate(fps);
+        } else {
+            vm.runtime.currentStepTime = 1000 / fps;
+        }
     };
 
     // --- RENDER REFRESH ---
@@ -71,6 +71,9 @@
         const varList = document.getElementById('needle-vars');
         const spriteList = document.getElementById('needle-sprites');
         
+        // Only clear and re-render if we aren't actively typing in an input field
+        if (document.activeElement.tagName === 'INPUT' && document.activeElement.id !== 'needle-search') return;
+
         varList.innerHTML = '';
         spriteList.innerHTML = '';
 
@@ -79,8 +82,8 @@
             Object.values(target.variables).forEach(v => {
                 if (v.name.toLowerCase().includes(searchTerm)) {
                     const row = document.createElement('div');
-                    row.style = "display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;";
-                    row.innerHTML = `<span>${v.name}:</span><input type="text" value="${v.value}" style="width:50px; background:#000; color:#fff; border:1px solid #333;">`;
+                    row.style = "display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; align-items: center;";
+                    row.innerHTML = `<span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:120px;">${v.name}:</span><input type="text" value="${v.value}" style="width:60px; background:#000; color:#fff; border:1px solid #333; text-align:center;">`;
                     row.querySelector('input').onchange = (e) => { v.value = e.target.value; };
                     varList.appendChild(row);
                 }
@@ -89,12 +92,29 @@
             // Render Sprites
             if (!target.isStage && target.sprite.name.toLowerCase().includes(searchTerm)) {
                 const row = document.createElement('div');
-                row.style = "display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0;";
-                row.innerHTML = `<span>${target.sprite.name}</span><button style="font-size:10px; cursor:pointer;">RESIZE</button>`;
-                row.querySelector('button').onclick = () => {
-                    let newSize = prompt(`Set size for ${target.sprite.name}:`, target.size);
-                    if (newSize) target.setSize(Number(newSize));
+                row.style = "display: flex; justify-content: space-between; font-size: 11px; margin: 3px 0; align-items: center;";
+                
+                const isVis = target.visible;
+                row.innerHTML = `
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100px;">${target.sprite.name}</span>
+                    <div>
+                        <button class="vis-btn" style="font-size:10px; cursor:pointer; margin-right:4px; background:#222; color:${isVis ? '#ff4444' : '#44ff44'}; border:1px solid #555;">${isVis ? 'HIDE' : 'SHOW'}</button>
+                        <button class="res-btn" style="font-size:10px; cursor:pointer; background:#222; color:#fff; border:1px solid #555;">RESIZE</button>
+                    </div>
+                `;
+                
+                // Show/Hide Toggle
+                row.querySelector('.vis-btn').onclick = () => {
+                    target.setVisible(!target.visible);
+                    updateNeedle(); // Force UI refresh to update button text instantly
                 };
+
+                // Resize Button
+                row.querySelector('.res-btn').onclick = () => {
+                    let newSize = prompt(`Set size for ${target.sprite.name} (Current: ${target.size}%):`, target.size);
+                    if (newSize && !isNaN(newSize)) target.setSize(Number(newSize));
+                };
+
                 spriteList.appendChild(row);
             }
         });
@@ -105,6 +125,9 @@
         if (!document.getElementById('billies-needle-menu')) return clearInterval(refreshLoop);
         updateNeedle();
     }, 3000);
+    
+    // Add real-time search filtering
+    document.getElementById('needle-search').onkeyup = updateNeedle;
 
     updateNeedle();
     console.log("Billies Needle Injected Successfully.");
