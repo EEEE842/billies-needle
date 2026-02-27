@@ -34,7 +34,7 @@
     const menu = document.createElement('div');
     menu.id = "billies-needle-menu";
     menu.style = `
-        position: fixed; top: 50px; right: 20px; width: 300px; max-height: 85vh;
+        position: fixed; top: 50px; right: 20px; width: 320px; max-height: 85vh;
         background: #1a1a1a; color: #c300ff; border: 2px solid #c300ff; border-radius: 4px;
         z-index: 999999; font-family: 'Courier New', monospace; overflow-y: auto;
         box-shadow: 0 0 15px rgba(195, 0, 255, 0.4); padding: 12px;
@@ -155,13 +155,24 @@
                 const row = document.createElement('div');
                 row.style = "display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center; border-left: 1px solid #c300ff; padding-left: 5px;";
                 const isVisible = target.visible;
-                row.innerHTML = `<span style="max-width:90px; overflow:hidden;">${target.sprite.name}</span>
-                    <div>
-                        <button class="v-btn" style="padding:2px 5px; cursor:pointer; background:#000; color:${isVisible ? '#ff4444' : '#44ff44'}; border:1px solid ${isVisible ? '#ff4444' : '#44ff44'}; font-size:9px;">${isVisible ? 'HIDE' : 'SHOW'}</button>
-                        <button class="r-btn" style="padding:2px 5px; cursor:pointer; background:#000; color:#fff; border:1px solid #fff; font-size:9px; margin-left:3px;">SIZE</button>
+                row.innerHTML = `<span style="max-width:85px; overflow:hidden; white-space:nowrap;">${target.sprite.name}</span>
+                    <div style="display: flex; gap: 3px;">
+                        <button class="v-btn" style="padding:2px 4px; cursor:pointer; background:#000; color:${isVisible ? '#ff4444' : '#44ff44'}; border:1px solid ${isVisible ? '#ff4444' : '#44ff44'}; font-size:9px;">${isVisible ? 'H' : 'S'}</button>
+                        <button class="r-btn" style="padding:2px 4px; cursor:pointer; background:#000; color:#fff; border:1px solid #fff; font-size:9px;">SIZE</button>
+                        <button class="d-btn" style="padding:2px 4px; cursor:pointer; background:#440000; color:#ff4444; border:1px solid #ff4444; font-size:9px; font-weight:bold;">DEL</button>
                     </div>`;
+                
                 row.querySelector('.v-btn').onclick = () => { target.setVisible(!target.visible); vm.runtime.requestRedraw(); updateNeedle(); };
                 row.querySelector('.r-btn').onclick = () => { let val = prompt(`New size:`, target.size); if (val) target.setSize(Number(val)); };
+                
+                // --- DELETE BUTTON LOGIC ---
+                row.querySelector('.d-btn').onclick = () => {
+                    if (confirm(`Are you sure you want to delete ${target.sprite.name}?`)) {
+                        vm.runtime.disposeTarget(target);
+                        updateNeedle();
+                    }
+                };
+                
                 spriteList.appendChild(row);
             }
         });
