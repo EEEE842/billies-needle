@@ -18,15 +18,22 @@
     const vm = getVM();
     if (!vm) return alert("Billies Needle: VM not found!");
 
-    // --- INJECT PULSE ANIMATION ---
+    // --- INJECT PULSE ANIMATION & LOGO CSS ---
     const style = document.createElement('style');
     style.innerHTML = `
         @keyframes needlePulse {
-            0% { border-color: #c300ff; box-shadow: 0 0 15px rgba(195, 0, 255, 0.4); }
-            50% { border-color: #ff00ff; box-shadow: 0 0 25px rgba(255, 0, 255, 0.6); }
-            100% { border-color: #c300ff; box-shadow: 0 0 15px rgba(195, 0, 255, 0.4); }
+            0% { border-color: #c300ff; box-shadow: 0 0 15px rgba(195, 0, 255, 0.4); color: #c300ff; }
+            50% { border-color: #ff00ff; box-shadow: 0 0 25px rgba(255, 0, 255, 0.6); color: #ff00ff; }
+            100% { border-color: #c300ff; box-shadow: 0 0 15px rgba(195, 0, 255, 0.4); color: #c300ff; }
         }
         .needle-pulsing { animation: needlePulse 4s infinite ease-in-out !important; }
+        .menu-logo-img {
+            width: 22px;
+            height: 22px;
+            image-rendering: pixelated;
+            margin-left: 10px;
+            filter: drop-shadow(0 0 5px rgba(195, 0, 255, 0.5));
+        }
     `;
     document.head.appendChild(style);
 
@@ -45,7 +52,7 @@
     // --- UI SETUP ---
     const menu = document.createElement('div');
     menu.id = "billies-needle-menu";
-    menu.className = "needle-pulsing"; // Apply pulse to main menu
+    menu.className = "needle-pulsing"; 
     menu.style = `
         position: fixed; top: 50px; right: 20px; width: 300px; max-height: 85vh;
         background: #1a1a1a; color: #c300ff; border: 2px solid #c300ff; border-radius: 4px;
@@ -53,10 +60,16 @@
         padding: 12px;
     `;
     
+    // REPLACE THIS URL WITH YOUR GITHUB RAW URL
+    const LOGO_URL = "https://raw.githubusercontent.com/EEEE842/billies-needle/main/costume1.png";
+
     menu.innerHTML = `
-        <div id="drag-header" style="cursor: move; font-weight: bold; border-bottom: 1px solid #c300ff; padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between;">
-            <span>[ BILLIES NEEDLE ]</span>
-            <span onclick="this.parentElement.parentElement.remove()" style="cursor:pointer; color:red;">[X]</span>
+        <div id="drag-header" style="cursor: move; font-weight: bold; border-bottom: 1px solid #c300ff; padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <span class="needle-pulsing" style="font-size: 14px;">[ BILLIES NEEDLE ]</span>
+                <img src="${LOGO_URL}" class="menu-logo-img" alt="logo">
+            </div>
+            <span onclick="this.parentElement.parentElement.remove()" style="cursor:pointer; color:red; font-size: 16px;">[X]</span>
         </div>
 
         <input type="text" id="needle-search" class="needle-pulsing" placeholder="Search..." style="width: 100%; background: #000; color: #c300ff; border: 1px solid #c300ff; padding: 4px; margin-bottom: 10px; font-size: 12px; box-sizing: border-box;">
@@ -97,7 +110,7 @@
     `;
     document.body.appendChild(menu);
 
-    // --- CAM HANDLERS ---
+    // --- LOGIC HANDLERS ---
     document.getElementById('cam-x').oninput = (e) => { camX = Number(e.target.value); applyCam(); };
     document.getElementById('cam-y').oninput = (e) => { camY = Number(e.target.value); applyCam(); };
     document.getElementById('cam-reset').onclick = () => {
@@ -107,7 +120,6 @@
         applyCam();
     };
 
-    // --- COLLAPSE & DRAG ---
     const toggle = (id) => {
         const el = document.getElementById(`needle-${id}`);
         const ind = document.getElementById(`indicator-${id}`);
@@ -125,7 +137,6 @@
     document.onmousemove = (e) => { if (isDragging) { menu.style.left = (e.clientX + offset[0]) + 'px'; menu.style.top = (e.clientY + offset[1]) + 'px'; } };
     document.onmouseup = () => isDragging = false;
 
-    // --- ENGINE LOGIC ---
     let originalStep = vm.runtime._step.bind(vm.runtime); 
     let isFrozen = false;
     document.getElementById('btn-freeze').onclick = function() {
@@ -133,11 +144,11 @@
         if (isFrozen) {
             vm.runtime._step = function() { this.emit('RUNTIME_STEP_START'); this.emit('RUNTIME_STEP_END'); };
             this.innerText = "UNFREEZE ENGINE"; this.style.color = "#ff4444";
-            this.classList.remove('needle-pulsing'); // Stop pulse when red/frozen
+            this.classList.remove('needle-pulsing'); 
         } else {
             vm.runtime._step = originalStep;
             this.innerText = "FREEZE ENGINE"; this.style.color = "#c300ff";
-            this.classList.add('needle-pulsing'); // Resume pulse
+            this.classList.add('needle-pulsing'); 
         }
     };
 
@@ -147,7 +158,6 @@
         else vm.runtime.currentStepTime = 1000 / fps;
     };
 
-    // --- RENDER REFRESH ---
     function updateNeedle() {
         const searchTerm = document.getElementById('needle-search').value.toLowerCase();
         const varList = document.getElementById('needle-vars');
