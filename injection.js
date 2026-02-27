@@ -34,7 +34,6 @@
         .pin-btn { cursor: pointer; background: none; border: none; font-size: 10px; padding: 0 5px; color: #444; transition: 0.2s; }
         .pin-btn.active { color: #ff00ff; text-shadow: 0 0 5px #ff00ff; }
         
-        /* Custom Scrollbar for the menu */
         #billies-needle-menu::-webkit-scrollbar { width: 6px; }
         #billies-needle-menu::-webkit-scrollbar-track { background: #111; }
         #billies-needle-menu::-webkit-scrollbar-thumb { background: #c300ff; border-radius: 10px; }
@@ -77,6 +76,15 @@
                         <input type="range" class="speed-hack-input" min="1" max="120" value="30" style="width:100%; accent-color:#c300ff;">
                     </div>
                 </div>
+
+                <div id="row-volume" style="display:flex; align-items:center; margin-bottom:10px;">
+                    <button class="pin-btn" onclick="togglePin('row-volume')">📌</button>
+                    <div style="flex-grow:1;">
+                        <label style="font-size: 10px; display:block;">MASTER VOLUME: <span class="vol-display">100%</span></label>
+                        <input type="range" class="volume-input" min="0" max="200" value="100" style="width:100%; accent-color:#00ffcc;">
+                    </div>
+                </div>
+
                 <div id="row-freeze" style="display:flex; align-items:center;">
                      <button class="pin-btn" onclick="togglePin('row-freeze')">📌</button>
                      <button class="freeze-btn needle-pulsing" style="flex-grow:1; cursor:pointer; background:#000; color:#c300ff; border:1px solid #c300ff; padding:5px; font-family:inherit; font-size:11px; font-weight:bold;">FREEZE ENGINE</button>
@@ -129,10 +137,20 @@
         document.querySelectorAll('.speed-hack-input').forEach(input => input.value = val);
     };
 
+    const handleVolume = (val) => {
+        const volume = Number(val) / 100;
+        if (vm.runtime.audioEngine) {
+            vm.runtime.audioEngine.setMasterVolume(volume);
+        }
+        document.querySelectorAll('.volume-input').forEach(input => input.value = val);
+        document.querySelectorAll('.vol-display').forEach(span => span.innerText = val + "%");
+    };
+
     // --- INITIALIZE EVENTS ---
     const setupMiscEvents = (container) => {
         container.querySelectorAll('.freeze-btn').forEach(b => b.onclick = () => handleFreeze(b));
         container.querySelectorAll('.speed-hack-input').forEach(i => i.oninput = (e) => handleSpeed(e.target.value));
+        container.querySelectorAll('.volume-input').forEach(i => i.oninput = (e) => handleVolume(e.target.value));
     };
     setupMiscEvents(menu);
 
@@ -203,13 +221,16 @@
         if (pinnedItems.has('row-speed')) {
             const clone = document.getElementById('row-speed').cloneNode(true);
             pinList.appendChild(clone);
-            setupMiscEvents(pinList);
+        }
+        if (pinnedItems.has('row-volume')) {
+            const clone = document.getElementById('row-volume').cloneNode(true);
+            pinList.appendChild(clone);
         }
         if (pinnedItems.has('row-freeze')) {
             const clone = document.getElementById('row-freeze').cloneNode(true);
             pinList.appendChild(clone);
-            setupMiscEvents(pinList);
         }
+        setupMiscEvents(pinList);
 
         vm.runtime.targets.forEach(target => {
             Object.values(target.variables).forEach(v => {
@@ -229,14 +250,6 @@
                 if (isPinned) pinList.appendChild(row.cloneNode(true));
                 if (target.sprite.name.toLowerCase().includes(searchTerm)) spriteList.appendChild(row);
             }
-        });
-        
-        // Ensure inputs in Pins section work
-        pinList.querySelectorAll('.var-input').forEach((input, index) => {
-            input.onchange = (e) => {
-                // Find the original var and update it (logic would be more complex to map back perfectly,
-                // but for live updates, the next 3s interval will sync them anyway)
-            };
         });
 
         if (pinList.innerHTML === '') pinList.innerHTML = '<div style="font-size:9px; color:#444; text-align:center;">No items pinned.</div>';
