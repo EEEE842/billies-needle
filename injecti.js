@@ -19,6 +19,8 @@
     if (!vm) return alert("Billies Needle: VM not found!");
 
     const pinnedItems = new Set();
+    // Keep track of which sprites are in ghost mode
+    const ghostSprites = new Set();
 
     const style = document.createElement('style');
     style.innerHTML = `
@@ -40,7 +42,7 @@
     const menu = document.createElement('div');
     menu.id = "billies-needle-menu";
     menu.className = "needle-pulsing"; 
-    menu.style = `position: fixed; top: 50px; right: 20px; width: 300px; max-height: 85vh; background: #1a1a1a; color: #c300ff; border: 2px solid #c300ff; border-radius: 4px; z-index: 999999; font-family: 'Courier New', monospace; overflow-y: auto; padding: 12px;`;
+    menu.style = `position: fixed; top: 50px; right: 20px; width: 310px; max-height: 85vh; background: #1a1a1a; color: #c300ff; border: 2px solid #c300ff; border-radius: 4px; z-index: 999999; font-family: 'Courier New', monospace; overflow-y: auto; padding: 12px;`;
     
     const LOGO_URL = "https://raw.githubusercontent.com/EEEE842/billies-needle/main/costume1.png";
 
@@ -108,6 +110,13 @@
     `;
     document.body.appendChild(menu);
 
+    // --- PATCHING ENGINE FOR GHOST MODE ---
+    const originalTouching = vm.runtime.isTouchingSprite;
+    vm.runtime.isTouchingSprite = function(a, b) {
+        if (ghostSprites.has(a) || ghostSprites.has(b)) return false;
+        return originalTouching.apply(this, arguments);
+    };
+
     // --- LOGIC ---
     let originalStep = vm.runtime._step.bind(vm.runtime);
     let isFrozen = false;
@@ -148,8 +157,7 @@
     };
 
     const handleClones = (val) => {
-        const limit = Number(val);
-        vm.runtime.MAX_CLONES = limit;
+        vm.runtime.MAX_CLONES = Number(val);
         document.querySelectorAll('.clone-input').forEach(i => i.value = val);
         document.querySelectorAll('.clone-display').forEach(s => s.innerText = val);
     };
@@ -200,6 +208,8 @@
         const pinId = `sprite-${target.id}`;
         row.style = "display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center; border-left: 1px solid #c300ff; padding-left: 5px;";
         const isVisible = target.visible;
+        const isGhost = ghostSprites.has(target.id);
+
         row.innerHTML = `
             <div style="display:flex; align-items:center;">
                 <span style="max-width:70px; overflow:hidden; white-space:nowrap;">${target.sprite.name}</span>
@@ -208,17 +218,17 @@
                 <button class="v-btn" style="padding:2px 4px; cursor:pointer; background:#000; color:${isVisible ? '#ff4444' : '#44ff44'}; border:1px solid ${isVisible ? '#ff4444' : '#44ff44'}; font-size:9px;">${isVisible ? 'H' : 'S'}</button>
                 <button class="r-btn" style="padding:2px 4px; cursor:pointer; background:#000; color:#fff; border:1px solid #fff; font-size:9px; margin-left:2px;">SZ</button>
                 <button class="d-btn" style="padding:2px 4px; cursor:pointer; background:#440000; color:#ff4444; border:1px solid #ff4444; font-size:9px; margin-left:2px; font-weight:bold;">DEL</button>
+                <button class="g-btn" style="padding:2px 4px; cursor:pointer; background:#000; color:${isGhost ? '#00ff00' : '#888'}; border:1px solid ${isGhost ? '#00ff00' : '#888'}; font-size:9px; margin-left:2px;">GHO</button>
                 <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePin('${pinId}')" style="margin-left:2px;">📌</button>
             </div>`;
         
         row.querySelector('.v-btn').onclick = () => { target.setVisible(!target.visible); vm.runtime.requestRedraw(); updateNeedle(); };
         row.querySelector('.r-btn').onclick = () => { let val = prompt(`New size:`, target.size); if (val) target.setSize(Number(val)); };
-        row.querySelector('.d-btn').onclick = () => { 
-            if(confirm(`Delete sprite "${target.sprite.name}"? This cannot be undone.`)) {
-                vm.runtime.disposeTarget(target);
-                vm.runtime.requestRedraw();
-                updateNeedle();
-            }
+        row.querySelector('.d-btn').onclick = () => { if(confirm(`Delete "${target.sprite.name}"?`)) { vm.runtime.disposeTarget(target); updateNeedle(); } };
+        row.querySelector('.g-btn').onclick = () => {
+            if (ghostSprites.has(target.id)) ghostSprites.delete(target.id);
+            else ghostSprites.add(target.id);
+            updateNeedle();
         };
         return row;
     }
