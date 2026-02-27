@@ -25,8 +25,6 @@
     const applyCam = () => {
         const stage = vm.runtime.getTargetForStage();
         if (stage && vm.runtime.renderer) {
-            // We use the skin's rotation center to shift the view safely
-            // This moves the "world" relative to the view
             vm.runtime.renderer.setStageSize(camX, camY, 480, 360);
             vm.runtime.requestRedraw();
         }
@@ -35,15 +33,17 @@
     // --- UI SETUP ---
     const menu = document.createElement('div');
     menu.id = "billies-needle-menu";
+    // CHANGED: box-shadow from green to purple
     menu.style = `
         position: fixed; top: 50px; right: 20px; width: 300px; max-height: 85vh;
         background: #1a1a1a; color: #c300ff; border: 2px solid #c300ff; border-radius: 4px;
         z-index: 999999; font-family: 'Courier New', monospace; overflow-y: auto;
-        box-shadow: 0 0 15px rgba(0,255,65,0.4); padding: 12px;
+        box-shadow: 0 0 15px rgba(195, 0, 255, 0.4); padding: 12px;
     `;
     
+    // CHANGED: Header border-bottom to #c300ff
     menu.innerHTML = `
-        <div id="drag-header" style="cursor: move; font-weight: bold; border-bottom: 1px solid #00ff41; padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between;">
+        <div id="drag-header" style="cursor: move; font-weight: bold; border-bottom: 1px solid #c300ff; padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between;">
             <span>[ BILLIES NEEDLE ]</span>
             <span onclick="this.parentElement.parentElement.remove()" style="cursor:pointer; color:red;">[X]</span>
         </div>
@@ -147,7 +147,8 @@
                 if (v.name.toLowerCase().includes(searchTerm)) {
                     const row = document.createElement('div');
                     row.style = "display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;";
-                    row.innerHTML = `<span style="color:#00ff41;">${v.name}:</span><input type="text" value="${v.value}" style="width:60px; background:#000; color:#fff; border:1px solid #333; text-align:center;">`;
+                    // CHANGED: Variable label color to #c300ff
+                    row.innerHTML = `<span style="color:#c300ff;">${v.name}:</span><input type="text" value="${v.value}" style="width:60px; background:#000; color:#fff; border:1px solid #333; text-align:center;">`;
                     row.querySelector('input').onchange = (e) => { v.value = e.target.value; };
                     varList.appendChild(row);
                 }
@@ -155,7 +156,8 @@
 
             if (!target.isStage && target.sprite.name.toLowerCase().includes(searchTerm)) {
                 const row = document.createElement('div');
-                row.style = "display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center; border-left: 1px solid #00ff41; padding-left: 5px;";
+                // CHANGED: Sprite border-left to #c300ff
+                row.style = "display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center; border-left: 1px solid #c300ff; padding-left: 5px;";
                 const isVisible = target.visible;
                 row.innerHTML = `<span style="max-width:90px; overflow:hidden;">${target.sprite.name}</span>
                     <div>
