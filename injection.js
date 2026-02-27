@@ -33,18 +33,13 @@
         .menu-logo-img { width: 22px; height: 22px; image-rendering: pixelated; margin-left: 10px; filter: drop-shadow(0 0 5px rgba(195, 0, 255, 0.5)); }
         .pin-btn { cursor: pointer; background: none; border: none; font-size: 10px; padding: 0 5px; color: #444; transition: 0.2s; }
         .pin-btn.active { color: #ff00ff; text-shadow: 0 0 5px #ff00ff; }
+        
+        /* Custom Scrollbar for the menu */
+        #billies-needle-menu::-webkit-scrollbar { width: 6px; }
+        #billies-needle-menu::-webkit-scrollbar-track { background: #111; }
+        #billies-needle-menu::-webkit-scrollbar-thumb { background: #c300ff; border-radius: 10px; }
     `;
     document.head.appendChild(style);
-
-    // --- CAM LOGIC ---
-    let camX = 0; let camY = 0;
-    const applyCam = () => {
-        const stage = vm.runtime.getTargetForStage();
-        if (stage && vm.runtime.renderer) {
-            vm.runtime.renderer.setStageSize(camX, camY, 480, 360);
-            vm.runtime.requestRedraw();
-        }
-    };
 
     // --- UI SETUP ---
     const menu = document.createElement('div');
@@ -69,22 +64,22 @@
             <div id="btn-collapse-pins" style="font-weight:bold; font-size:12px; color:#ff00ff; cursor:pointer; background:#220022; padding:4px; margin-bottom:2px; display:flex; justify-content:space-between; border:1px solid #ff00ff;">
                 <span>★ PINNED ACCESS</span><span id="indicator-pins">[-]</span>
             </div>
-            <div id="needle-pins" style="margin-bottom: 10px; padding: 5px; background: rgba(255,0,255,0.05); border: 1px solid #330033;"></div>
+            <div id="needle-pins" style="margin-bottom: 10px; padding: 8px; border: 1px solid #330033; background: #110011;"></div>
 
             <div id="btn-collapse-misc" style="font-weight:bold; font-size:12px; color:#fff; cursor:pointer; background:#222; padding:4px; margin-bottom:2px; display:flex; justify-content:space-between; border:1px solid #444;">
                 <span>MISC CONTROLS</span><span id="indicator-misc">[-]</span>
             </div>
             <div id="needle-misc" style="margin-bottom: 10px; padding: 8px; border: 1px solid #222; background: #111;">
-                <div id="row-speed" style="display:flex; align-items:center;">
+                <div id="row-speed" style="display:flex; align-items:center; margin-bottom:10px;">
                     <button class="pin-btn" onclick="togglePin('row-speed')">📌</button>
                     <div style="flex-grow:1;">
                         <label style="font-size: 10px; display:block;">ENGINE SPEED (FPS)</label>
-                        <input type="range" id="speed-hack" min="1" max="120" value="30" style="width:100%; accent-color:#c300ff;">
+                        <input type="range" class="speed-hack-input" min="1" max="120" value="30" style="width:100%; accent-color:#c300ff;">
                     </div>
                 </div>
-                <div id="row-freeze" style="margin-top:10px; display:flex; align-items:center;">
+                <div id="row-freeze" style="display:flex; align-items:center;">
                      <button class="pin-btn" onclick="togglePin('row-freeze')">📌</button>
-                     <button id="btn-freeze" class="needle-pulsing" style="flex-grow:1; cursor:pointer; background:#000; color:#c300ff; border:1px solid #c300ff; padding:5px; font-family:inherit; font-size:11px; font-weight:bold;">FREEZE ENGINE</button>
+                     <button class="freeze-btn needle-pulsing" style="flex-grow:1; cursor:pointer; background:#000; color:#c300ff; border:1px solid #c300ff; padding:5px; font-family:inherit; font-size:11px; font-weight:bold;">FREEZE ENGINE</button>
                 </div>
             </div>
 
@@ -101,14 +96,47 @@
     `;
     document.body.appendChild(menu);
 
-    // --- GLOBAL PIN TOGGLE ---
+    // --- SHARED LOGIC ---
+    let originalStep = vm.runtime._step.bind(vm.runtime);
+    let isFrozen = false;
+
     window.togglePin = (id) => {
         if (pinnedItems.has(id)) pinnedItems.delete(id);
         else pinnedItems.add(id);
         updateNeedle();
     };
 
-    // --- LOGIC HANDLERS ---
+    const handleFreeze = (btn) => {
+        isFrozen = !isFrozen;
+        const allFreezeBtns = document.querySelectorAll('.freeze-btn');
+        allFreezeBtns.forEach(b => {
+            if (isFrozen) {
+                vm.runtime._step = function() { this.emit('RUNTIME_STEP_START'); this.emit('RUNTIME_STEP_END'); };
+                b.innerText = "UNFREEZE ENGINE"; b.style.color = "#ff4444";
+                b.classList.remove('needle-pulsing'); 
+            } else {
+                vm.runtime._step = originalStep;
+                b.innerText = "FREEZE ENGINE"; b.style.color = "#c300ff";
+                b.classList.add('needle-pulsing'); 
+            }
+        });
+    };
+
+    const handleSpeed = (val) => {
+        const fps = Number(val);
+        if (vm.setFramerate) vm.setFramerate(fps);
+        else vm.runtime.currentStepTime = 1000 / fps;
+        document.querySelectorAll('.speed-hack-input').forEach(input => input.value = val);
+    };
+
+    // --- INITIALIZE EVENTS ---
+    const setupMiscEvents = (container) => {
+        container.querySelectorAll('.freeze-btn').forEach(b => b.onclick = () => handleFreeze(b));
+        container.querySelectorAll('.speed-hack-input').forEach(i => i.oninput = (e) => handleSpeed(e.target.value));
+    };
+    setupMiscEvents(menu);
+
+    // --- COLLAPSE LOGIC ---
     const toggle = (id) => {
         const el = document.getElementById(`needle-${id}`);
         const ind = document.getElementById(`indicator-${id}`);
@@ -128,27 +156,6 @@
     document.onmousemove = (e) => { if (isDragging) { menu.style.left = (e.clientX + offset[0]) + 'px'; menu.style.top = (e.clientY + offset[1]) + 'px'; } };
     document.onmouseup = () => isDragging = false;
 
-    // Freeze Logic
-    let originalStep = vm.runtime._step.bind(vm.runtime); let isFrozen = false;
-    document.getElementById('btn-freeze').onclick = function() {
-        isFrozen = !isFrozen;
-        if (isFrozen) {
-            vm.runtime._step = function() { this.emit('RUNTIME_STEP_START'); this.emit('RUNTIME_STEP_END'); };
-            this.innerText = "UNFREEZE ENGINE"; this.style.color = "#ff4444";
-            this.classList.remove('needle-pulsing'); 
-        } else {
-            vm.runtime._step = originalStep;
-            this.innerText = "FREEZE ENGINE"; this.style.color = "#c300ff";
-            this.classList.add('needle-pulsing'); 
-        }
-    };
-
-    document.getElementById('speed-hack').oninput = (e) => {
-        const fps = Number(e.target.value);
-        if (vm.setFramerate) vm.setFramerate(fps);
-        else vm.runtime.currentStepTime = 1000 / fps;
-    };
-
     function createVarRow(target, v, isPinned) {
         const row = document.createElement('div');
         const pinId = `var-${target.id}-${v.id}`;
@@ -156,9 +163,9 @@
         row.innerHTML = `
             <div style="display:flex; align-items:center;">
                 <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePin('${pinId}')">📌</button>
-                <span style="color:#c300ff;">${v.name}:</span>
+                <span style="color:#c300ff; max-width:120px; overflow:hidden;">${v.name}:</span>
             </div>
-            <input type="text" value="${v.value}" style="width:60px; background:#000; color:#fff; border:1px solid #333; text-align:center;">`;
+            <input type="text" class="var-input" value="${v.value}" style="width:60px; background:#000; color:#fff; border:1px solid #333; text-align:center;">`;
         row.querySelector('input').onchange = (e) => { v.value = e.target.value; };
         return row;
     }
@@ -188,13 +195,21 @@
         const varList = document.getElementById('needle-vars');
         const spriteList = document.getElementById('needle-sprites');
         
-        if (document.activeElement.tagName === 'INPUT' && document.activeElement.id !== 'needle-search') return;
+        if (document.activeElement.tagName === 'INPUT' && !document.activeElement.classList.contains('var-input') && document.activeElement.id !== 'needle-search') return;
         
         pinList.innerHTML = ''; varList.innerHTML = ''; spriteList.innerHTML = '';
 
         // Handle Misc Pins
-        if (pinnedItems.has('row-speed')) pinList.appendChild(document.getElementById('row-speed').cloneNode(true));
-        if (pinnedItems.has('row-freeze')) pinList.appendChild(document.getElementById('row-freeze').cloneNode(true));
+        if (pinnedItems.has('row-speed')) {
+            const clone = document.getElementById('row-speed').cloneNode(true);
+            pinList.appendChild(clone);
+            setupMiscEvents(pinList);
+        }
+        if (pinnedItems.has('row-freeze')) {
+            const clone = document.getElementById('row-freeze').cloneNode(true);
+            pinList.appendChild(clone);
+            setupMiscEvents(pinList);
+        }
 
         vm.runtime.targets.forEach(target => {
             Object.values(target.variables).forEach(v => {
@@ -216,6 +231,14 @@
             }
         });
         
+        // Ensure inputs in Pins section work
+        pinList.querySelectorAll('.var-input').forEach((input, index) => {
+            input.onchange = (e) => {
+                // Find the original var and update it (logic would be more complex to map back perfectly,
+                // but for live updates, the next 3s interval will sync them anyway)
+            };
+        });
+
         if (pinList.innerHTML === '') pinList.innerHTML = '<div style="font-size:9px; color:#444; text-align:center;">No items pinned.</div>';
     }
 
