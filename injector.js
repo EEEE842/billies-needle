@@ -37,7 +37,7 @@
     menu.id = "billies-needle-menu";
     menu.style = `
         position: fixed; top: 50px; right: 20px; width: 300px; max-height: 85vh;
-        background: #1a1a1a; color: #00ff41; border: 2px solid #00ff41; border-radius: 4px;
+        background: #1a1a1a; color: #c300ff; border: 2px solid #c300ff; border-radius: 4px;
         z-index: 999999; font-family: 'Courier New', monospace; overflow-y: auto;
         box-shadow: 0 0 15px rgba(0,255,65,0.4); padding: 12px;
     `;
@@ -48,7 +48,7 @@
             <span onclick="this.parentElement.parentElement.remove()" style="cursor:pointer; color:red;">[X]</span>
         </div>
 
-        <input type="text" id="needle-search" placeholder="Search..." style="width: 100%; background: #000; color: #00ff41; border: 1px solid #00ff41; padding: 4px; margin-bottom: 10px; font-size: 12px; box-sizing: border-box;">
+        <input type="text" id="needle-search" placeholder="Search..." style="width: 100%; background: #000; color: #c300ff; border: 1px solid #c300ff; padding: 4px; margin-bottom: 10px; font-size: 12px; box-sizing: border-box;">
         
         <div id="needle-content">
             <div id="btn-collapse-misc" style="font-weight:bold; font-size:12px; color:#fff; cursor:pointer; background:#222; padding:4px; margin-bottom:2px; display:flex; justify-content:space-between; border:1px solid #444;">
@@ -56,21 +56,21 @@
             </div>
             <div id="needle-misc" style="margin-bottom: 10px; padding: 8px; border: 1px solid #222; background: #111;">
                 <label style="font-size: 10px; display:block; margin-bottom:5px;">ENGINE SPEED (FPS)</label>
-                <input type="range" id="speed-hack" min="1" max="120" value="30" style="width:100%; accent-color:#00ff41; margin-bottom:10px;">
+                <input type="range" id="speed-hack" min="1" max="120" value="30" style="width:100%; accent-color:#c300ff; margin-bottom:10px;">
                 
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px;">
                     <div style="width:30%;">
                         <label style="font-size: 9px;">CAM X</label>
-                        <input type="number" id="cam-x" value="0" style="width:100%; background:#000; color:#00ff41; border:1px solid #444; font-size:11px;">
+                        <input type="number" id="cam-x" value="0" style="width:100%; background:#000; color:#c300ff; border:1px solid #444; font-size:11px;">
                     </div>
                     <div style="width:30%;">
                         <label style="font-size: 9px;">CAM Y</label>
-                        <input type="number" id="cam-y" value="0" style="width:100%; background:#000; color:#00ff41; border:1px solid #444; font-size:11px;">
+                        <input type="number" id="cam-y" value="0" style="width:100%; background:#000; color:#c300ff; border:1px solid #444; font-size:11px;">
                     </div>
                     <button id="cam-reset" style="width:30%; height:20px; background:#333; color:#fff; border:none; font-size:9px; cursor:pointer;">RESET</button>
                 </div>
 
-                <button id="btn-freeze" style="width:100%; cursor:pointer; background:#000; color:#00ff41; border:1px solid #00ff41; padding:5px; font-family:inherit; font-size:11px; font-weight:bold;">FREEZE ENGINE</button>
+                <button id="btn-freeze" style="width:100%; cursor:pointer; background:#000; color:#c300ff; border:1px solid #c300ff; padding:5px; font-family:inherit; font-size:11px; font-weight:bold;">FREEZE ENGINE</button>
             </div>
 
             <div id="btn-collapse-vars" style="font-weight:bold; font-size:12px; color:#fff; cursor:pointer; background:#222; padding:4px; margin-bottom:2px; display:flex; justify-content:space-between; border:1px solid #444;">
@@ -124,7 +124,7 @@
             this.innerText = "UNFREEZE ENGINE"; this.style.color = "#ff4444";
         } else {
             vm.runtime._step = originalStep;
-            this.innerText = "FREEZE ENGINE"; this.style.color = "#00ff41";
+            this.innerText = "FREEZE ENGINE"; this.style.color = "#c300ff";
         }
     };
 
