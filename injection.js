@@ -195,15 +195,24 @@
         const isVisible = target.visible;
         row.innerHTML = `
             <div style="display:flex; align-items:center;">
-                <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePin('${pinId}')">📌</button>
-                <span style="max-width:80px; overflow:hidden;">${target.sprite.name}</span>
+                <span style="max-width:70px; overflow:hidden; white-space:nowrap;">${target.sprite.name}</span>
             </div>
-            <div>
-                <button class="v-btn" style="padding:2px 5px; cursor:pointer; background:#000; color:${isVisible ? '#ff4444' : '#44ff44'}; border:1px solid ${isVisible ? '#ff4444' : '#44ff44'}; font-size:9px;">${isVisible ? 'HIDE' : 'SHOW'}</button>
-                <button class="r-btn" style="padding:2px 5px; cursor:pointer; background:#000; color:#fff; border:1px solid #fff; font-size:9px; margin-left:3px;">SIZE</button>
+            <div style="display:flex; align-items:center;">
+                <button class="v-btn" style="padding:2px 4px; cursor:pointer; background:#000; color:${isVisible ? '#ff4444' : '#44ff44'}; border:1px solid ${isVisible ? '#ff4444' : '#44ff44'}; font-size:9px;">${isVisible ? 'H' : 'S'}</button>
+                <button class="r-btn" style="padding:2px 4px; cursor:pointer; background:#000; color:#fff; border:1px solid #fff; font-size:9px; margin-left:2px;">SZ</button>
+                <button class="d-btn" style="padding:2px 4px; cursor:pointer; background:#440000; color:#ff4444; border:1px solid #ff4444; font-size:9px; margin-left:2px; font-weight:bold;">DEL</button>
+                <button class="pin-btn ${isPinned ? 'active' : ''}" onclick="togglePin('${pinId}')" style="margin-left:2px;">📌</button>
             </div>`;
+        
         row.querySelector('.v-btn').onclick = () => { target.setVisible(!target.visible); vm.runtime.requestRedraw(); updateNeedle(); };
         row.querySelector('.r-btn').onclick = () => { let val = prompt(`New size:`, target.size); if (val) target.setSize(Number(val)); };
+        row.querySelector('.d-btn').onclick = () => { 
+            if(confirm(`Delete sprite "${target.sprite.name}"? This cannot be undone.`)) {
+                vm.runtime.disposeTarget(target);
+                vm.runtime.requestRedraw();
+                updateNeedle();
+            }
+        };
         return row;
     }
 
@@ -218,18 +227,9 @@
         pinList.innerHTML = ''; varList.innerHTML = ''; spriteList.innerHTML = '';
 
         // Handle Misc Pins
-        if (pinnedItems.has('row-speed')) {
-            const clone = document.getElementById('row-speed').cloneNode(true);
-            pinList.appendChild(clone);
-        }
-        if (pinnedItems.has('row-volume')) {
-            const clone = document.getElementById('row-volume').cloneNode(true);
-            pinList.appendChild(clone);
-        }
-        if (pinnedItems.has('row-freeze')) {
-            const clone = document.getElementById('row-freeze').cloneNode(true);
-            pinList.appendChild(clone);
-        }
+        if (pinnedItems.has('row-speed')) pinList.appendChild(document.getElementById('row-speed').cloneNode(true));
+        if (pinnedItems.has('row-volume')) pinList.appendChild(document.getElementById('row-volume').cloneNode(true));
+        if (pinnedItems.has('row-freeze')) pinList.appendChild(document.getElementById('row-freeze').cloneNode(true));
         setupMiscEvents(pinList);
 
         vm.runtime.targets.forEach(target => {
