@@ -18,6 +18,18 @@
     const vm = getVM();
     if (!vm) return alert("Billies Needle: VM not found!");
 
+    // --- INJECT PULSE ANIMATION ---
+    const style = document.createElement('style');
+    style.innerHTML = `
+        @keyframes needlePulse {
+            0% { border-color: #c300ff; box-shadow: 0 0 15px rgba(195, 0, 255, 0.4); }
+            50% { border-color: #ff00ff; box-shadow: 0 0 25px rgba(255, 0, 255, 0.6); }
+            100% { border-color: #c300ff; box-shadow: 0 0 15px rgba(195, 0, 255, 0.4); }
+        }
+        .needle-pulsing { animation: needlePulse 4s infinite ease-in-out !important; }
+    `;
+    document.head.appendChild(style);
+
     // --- NEW SAFE CAM LOGIC ---
     let camX = 0;
     let camY = 0;
@@ -33,22 +45,21 @@
     // --- UI SETUP ---
     const menu = document.createElement('div');
     menu.id = "billies-needle-menu";
-    // CHANGED: box-shadow from green to purple
+    menu.className = "needle-pulsing"; // Apply pulse to main menu
     menu.style = `
         position: fixed; top: 50px; right: 20px; width: 300px; max-height: 85vh;
         background: #1a1a1a; color: #c300ff; border: 2px solid #c300ff; border-radius: 4px;
         z-index: 999999; font-family: 'Courier New', monospace; overflow-y: auto;
-        box-shadow: 0 0 15px rgba(195, 0, 255, 0.4); padding: 12px;
+        padding: 12px;
     `;
     
-    // CHANGED: Header border-bottom to #c300ff
     menu.innerHTML = `
         <div id="drag-header" style="cursor: move; font-weight: bold; border-bottom: 1px solid #c300ff; padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between;">
             <span>[ BILLIES NEEDLE ]</span>
             <span onclick="this.parentElement.parentElement.remove()" style="cursor:pointer; color:red;">[X]</span>
         </div>
 
-        <input type="text" id="needle-search" placeholder="Search..." style="width: 100%; background: #000; color: #c300ff; border: 1px solid #c300ff; padding: 4px; margin-bottom: 10px; font-size: 12px; box-sizing: border-box;">
+        <input type="text" id="needle-search" class="needle-pulsing" placeholder="Search..." style="width: 100%; background: #000; color: #c300ff; border: 1px solid #c300ff; padding: 4px; margin-bottom: 10px; font-size: 12px; box-sizing: border-box;">
         
         <div id="needle-content">
             <div id="btn-collapse-misc" style="font-weight:bold; font-size:12px; color:#fff; cursor:pointer; background:#222; padding:4px; margin-bottom:2px; display:flex; justify-content:space-between; border:1px solid #444;">
@@ -70,7 +81,7 @@
                     <button id="cam-reset" style="width:30%; height:20px; background:#333; color:#fff; border:none; font-size:9px; cursor:pointer;">RESET</button>
                 </div>
 
-                <button id="btn-freeze" style="width:100%; cursor:pointer; background:#000; color:#c300ff; border:1px solid #c300ff; padding:5px; font-family:inherit; font-size:11px; font-weight:bold;">FREEZE ENGINE</button>
+                <button id="btn-freeze" class="needle-pulsing" style="width:100%; cursor:pointer; background:#000; color:#c300ff; border:1px solid #c300ff; padding:5px; font-family:inherit; font-size:11px; font-weight:bold;">FREEZE ENGINE</button>
             </div>
 
             <div id="btn-collapse-vars" style="font-weight:bold; font-size:12px; color:#fff; cursor:pointer; background:#222; padding:4px; margin-bottom:2px; display:flex; justify-content:space-between; border:1px solid #444;">
@@ -122,9 +133,11 @@
         if (isFrozen) {
             vm.runtime._step = function() { this.emit('RUNTIME_STEP_START'); this.emit('RUNTIME_STEP_END'); };
             this.innerText = "UNFREEZE ENGINE"; this.style.color = "#ff4444";
+            this.classList.remove('needle-pulsing'); // Stop pulse when red/frozen
         } else {
             vm.runtime._step = originalStep;
             this.innerText = "FREEZE ENGINE"; this.style.color = "#c300ff";
+            this.classList.add('needle-pulsing'); // Resume pulse
         }
     };
 
@@ -147,7 +160,6 @@
                 if (v.name.toLowerCase().includes(searchTerm)) {
                     const row = document.createElement('div');
                     row.style = "display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 4px;";
-                    // CHANGED: Variable label color to #c300ff
                     row.innerHTML = `<span style="color:#c300ff;">${v.name}:</span><input type="text" value="${v.value}" style="width:60px; background:#000; color:#fff; border:1px solid #333; text-align:center;">`;
                     row.querySelector('input').onchange = (e) => { v.value = e.target.value; };
                     varList.appendChild(row);
@@ -156,7 +168,6 @@
 
             if (!target.isStage && target.sprite.name.toLowerCase().includes(searchTerm)) {
                 const row = document.createElement('div');
-                // CHANGED: Sprite border-left to #c300ff
                 row.style = "display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center; border-left: 1px solid #c300ff; padding-left: 5px;";
                 const isVisible = target.visible;
                 row.innerHTML = `<span style="max-width:90px; overflow:hidden;">${target.sprite.name}</span>
