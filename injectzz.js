@@ -50,12 +50,15 @@
         
         <div id="needle-content">
             <div id="btn-collapse-misc" style="font-weight:bold; font-size:12px; color:#fff; cursor:pointer; background:#222; padding:4px; margin-bottom:2px; display:flex; justify-content:space-between; border:1px solid #444;">
-                <span>MISC CONTROLS</span><span id="indicator-misc">[-]</span>
+                <span>MISC CONTROLS <small id="total-clone-count" style="color:#c300ff; font-size:10px; margin-left:5px;">(0)</small></span><span id="indicator-misc">[-]</span>
             </div>
             <div id="needle-misc" style="margin-bottom: 10px; padding: 8px; border: 1px solid #222; background: #111;">
                 <label style="font-size: 10px; display:block; margin-bottom:5px;">ENGINE SPEED (FPS)</label>
                 <input type="range" id="speed-hack" min="1" max="120" value="30" style="width:100%; accent-color:#c300ff; margin-bottom:10px;">
                 
+                <label style="font-size: 10px; display:block; margin-bottom:5px;">MAX CLONES: <span id="max-clone-num">300</span></label>
+                <input type="range" id="max-clones-slider" min="0" max="10000" value="300" style="width:100%; accent-color:#c300ff; margin-bottom:15px;">
+
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px;">
                     <div style="width:30%;">
                         <label style="font-size: 9px;">CAM X</label>
@@ -84,7 +87,13 @@
     `;
     document.body.appendChild(menu);
 
-    // --- CAM HANDLERS ---
+    // --- MISC HANDLERS ---
+    document.getElementById('max-clones-slider').oninput = (e) => {
+        const val = Number(e.target.value);
+        vm.runtime.MAX_CLONES = val;
+        document.getElementById('max-clone-num').innerText = val;
+    };
+
     document.getElementById('cam-x').oninput = (e) => { camX = Number(e.target.value); applyCam(); };
     document.getElementById('cam-y').oninput = (e) => { camY = Number(e.target.value); applyCam(); };
     document.getElementById('cam-reset').onclick = () => {
@@ -137,10 +146,18 @@
         const searchTerm = document.getElementById('needle-search').value.toLowerCase();
         const varList = document.getElementById('needle-vars');
         const spriteList = document.getElementById('needle-sprites');
+        const totalCloneLabel = document.getElementById('total-clone-count');
+
+        if (totalCloneLabel) totalCloneLabel.innerText = `(Clones: ${vm.runtime._cloneCounter})`;
+
         if (document.activeElement.tagName === 'INPUT' && document.activeElement.id !== 'needle-search') return;
         varList.innerHTML = ''; spriteList.innerHTML = '';
 
+        // Separate Originals from Clones for counting
+        const spriteData = {};
+
         vm.runtime.targets.forEach(target => {
+            // Variable Logic
             Object.values(target.variables).forEach(v => {
                 if (v.name.toLowerCase().includes(searchTerm)) {
                     const row = document.createElement('div');
@@ -151,11 +168,33 @@
                 }
             });
 
-            if (!target.isStage && target.sprite.name.toLowerCase().includes(searchTerm)) {
+            // Sprite Logic
+            if (!target.isStage) {
+                const name = target.sprite.name;
+                if (!spriteData[name]) spriteData[name] = { target: null, clones: 0 };
+                
+                if (target.isOriginal) {
+                    spriteData[name].target = target;
+                } else {
+                    spriteData[name].clones++;
+                }
+            }
+        });
+
+        Object.keys(spriteData).forEach(name => {
+            const data = spriteData[name];
+            const target = data.target || vm.runtime.getSpriteTargetByName(name);
+            if (!target) return;
+
+            if (name.toLowerCase().includes(searchTerm)) {
                 const row = document.createElement('div');
                 row.style = "display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px; align-items: center; border-left: 1px solid #c300ff; padding-left: 5px;";
                 const isVisible = target.visible;
-                row.innerHTML = `<span style="max-width:85px; overflow:hidden; white-space:nowrap;">${target.sprite.name}</span>
+                
+                row.innerHTML = `
+                    <span style="max-width:100px; overflow:hidden; white-space:nowrap;">
+                        ${name} <span style="color:#999; font-size:9px;">[${data.clones}]</span>
+                    </span>
                     <div style="display: flex; gap: 3px;">
                         <button class="v-btn" style="padding:2px 4px; cursor:pointer; background:#000; color:${isVisible ? '#ff4444' : '#44ff44'}; border:1px solid ${isVisible ? '#ff4444' : '#44ff44'}; font-size:9px;">${isVisible ? 'H' : 'S'}</button>
                         <button class="r-btn" style="padding:2px 4px; cursor:pointer; background:#000; color:#fff; border:1px solid #fff; font-size:9px;">SIZE</button>
@@ -164,10 +203,8 @@
                 
                 row.querySelector('.v-btn').onclick = () => { target.setVisible(!target.visible); vm.runtime.requestRedraw(); updateNeedle(); };
                 row.querySelector('.r-btn').onclick = () => { let val = prompt(`New size:`, target.size); if (val) target.setSize(Number(val)); };
-                
-                // --- DELETE BUTTON LOGIC ---
                 row.querySelector('.d-btn').onclick = () => {
-                    if (confirm(`Are you sure you want to delete ${target.sprite.name}?`)) {
+                    if (confirm(`Are you sure you want to delete ${name} and its clones?`)) {
                         vm.runtime.disposeTarget(target);
                         updateNeedle();
                     }
