@@ -18,10 +18,8 @@
     const vm = getVM();
     if (!vm) return alert("Billies Needle: VM not found!");
 
-    // --- PIN STATE ---
     const pinnedItems = new Set();
 
-    // --- INJECT PULSE ANIMATION & LOGO CSS ---
     const style = document.createElement('style');
     style.innerHTML = `
         @keyframes needlePulse {
@@ -33,14 +31,12 @@
         .menu-logo-img { width: 22px; height: 22px; image-rendering: pixelated; margin-left: 10px; filter: drop-shadow(0 0 5px rgba(195, 0, 255, 0.5)); }
         .pin-btn { cursor: pointer; background: none; border: none; font-size: 10px; padding: 0 5px; color: #444; transition: 0.2s; }
         .pin-btn.active { color: #ff00ff; text-shadow: 0 0 5px #ff00ff; }
-        
         #billies-needle-menu::-webkit-scrollbar { width: 6px; }
         #billies-needle-menu::-webkit-scrollbar-track { background: #111; }
         #billies-needle-menu::-webkit-scrollbar-thumb { background: #c300ff; border-radius: 10px; }
     `;
     document.head.appendChild(style);
 
-    // --- UI SETUP ---
     const menu = document.createElement('div');
     menu.id = "billies-needle-menu";
     menu.className = "needle-pulsing"; 
@@ -77,6 +73,14 @@
                     </div>
                 </div>
 
+                <div id="row-clones" style="display:flex; align-items:center; margin-bottom:10px;">
+                    <button class="pin-btn" onclick="togglePin('row-clones')">📌</button>
+                    <div style="flex-grow:1;">
+                        <label style="font-size: 10px; display:block;">CLONE LIMIT: <span class="clone-display">300</span></label>
+                        <input type="range" class="clone-input" min="0" max="5000" value="300" style="width:100%; accent-color:#ff00ff;">
+                    </div>
+                </div>
+
                 <div id="row-volume" style="display:flex; align-items:center; margin-bottom:10px;">
                     <button class="pin-btn" onclick="togglePin('row-volume')">📌</button>
                     <div style="flex-grow:1;">
@@ -104,7 +108,7 @@
     `;
     document.body.appendChild(menu);
 
-    // --- SHARED LOGIC ---
+    // --- LOGIC ---
     let originalStep = vm.runtime._step.bind(vm.runtime);
     let isFrozen = false;
 
@@ -116,8 +120,7 @@
 
     const handleFreeze = (btn) => {
         isFrozen = !isFrozen;
-        const allFreezeBtns = document.querySelectorAll('.freeze-btn');
-        allFreezeBtns.forEach(b => {
+        document.querySelectorAll('.freeze-btn').forEach(b => {
             if (isFrozen) {
                 vm.runtime._step = function() { this.emit('RUNTIME_STEP_START'); this.emit('RUNTIME_STEP_END'); };
                 b.innerText = "UNFREEZE ENGINE"; b.style.color = "#ff4444";
@@ -134,30 +137,35 @@
         const fps = Number(val);
         if (vm.setFramerate) vm.setFramerate(fps);
         else vm.runtime.currentStepTime = 1000 / fps;
-        document.querySelectorAll('.speed-hack-input').forEach(input => input.value = val);
+        document.querySelectorAll('.speed-hack-input').forEach(i => i.value = val);
     };
 
     const handleVolume = (val) => {
         const volume = Number(val) / 100;
-        if (vm.runtime.audioEngine) {
-            vm.runtime.audioEngine.setMasterVolume(volume);
-        }
-        document.querySelectorAll('.volume-input').forEach(input => input.value = val);
-        document.querySelectorAll('.vol-display').forEach(span => span.innerText = val + "%");
+        if (vm.runtime.audioEngine) vm.runtime.audioEngine.setMasterVolume(volume);
+        document.querySelectorAll('.volume-input').forEach(i => i.value = val);
+        document.querySelectorAll('.vol-display').forEach(s => s.innerText = val + "%");
     };
 
-    // --- INITIALIZE EVENTS ---
+    const handleClones = (val) => {
+        const limit = Number(val);
+        vm.runtime.MAX_CLONES = limit;
+        document.querySelectorAll('.clone-input').forEach(i => i.value = val);
+        document.querySelectorAll('.clone-display').forEach(s => s.innerText = val);
+    };
+
     const setupMiscEvents = (container) => {
         container.querySelectorAll('.freeze-btn').forEach(b => b.onclick = () => handleFreeze(b));
         container.querySelectorAll('.speed-hack-input').forEach(i => i.oninput = (e) => handleSpeed(e.target.value));
         container.querySelectorAll('.volume-input').forEach(i => i.oninput = (e) => handleVolume(e.target.value));
+        container.querySelectorAll('.clone-input').forEach(i => i.oninput = (e) => handleClones(e.target.value));
     };
     setupMiscEvents(menu);
 
-    // --- COLLAPSE LOGIC ---
     const toggle = (id) => {
         const el = document.getElementById(`needle-${id}`);
         const ind = document.getElementById(`indicator-${id}`);
+        if (!el) return;
         const hide = el.style.display !== 'none';
         el.style.display = hide ? 'none' : 'block';
         ind.innerText = hide ? '[+]' : '[-]';
@@ -167,7 +175,6 @@
     document.getElementById('btn-collapse-vars').onclick = () => toggle('vars');
     document.getElementById('btn-collapse-sprites').onclick = () => toggle('sprites');
 
-    // Drag Logic
     let isDragging = false, offset = [0, 0];
     const header = document.getElementById('drag-header');
     header.onmousedown = (e) => { isDragging = true; offset = [menu.offsetLeft - e.clientX, menu.offsetTop - e.clientY]; };
@@ -221,13 +228,12 @@
         const pinList = document.getElementById('needle-pins');
         const varList = document.getElementById('needle-vars');
         const spriteList = document.getElementById('needle-sprites');
-        
         if (document.activeElement.tagName === 'INPUT' && !document.activeElement.classList.contains('var-input') && document.activeElement.id !== 'needle-search') return;
         
         pinList.innerHTML = ''; varList.innerHTML = ''; spriteList.innerHTML = '';
 
-        // Handle Misc Pins
         if (pinnedItems.has('row-speed')) pinList.appendChild(document.getElementById('row-speed').cloneNode(true));
+        if (pinnedItems.has('row-clones')) pinList.appendChild(document.getElementById('row-clones').cloneNode(true));
         if (pinnedItems.has('row-volume')) pinList.appendChild(document.getElementById('row-volume').cloneNode(true));
         if (pinnedItems.has('row-freeze')) pinList.appendChild(document.getElementById('row-freeze').cloneNode(true));
         setupMiscEvents(pinList);
@@ -237,21 +243,17 @@
                 const pinId = `var-${target.id}-${v.id}`;
                 const isPinned = pinnedItems.has(pinId);
                 const row = createVarRow(target, v, isPinned);
-                
                 if (isPinned) pinList.appendChild(row.cloneNode(true));
                 if (v.name.toLowerCase().includes(searchTerm)) varList.appendChild(row);
             });
-
             if (!target.isStage) {
                 const pinId = `sprite-${target.id}`;
                 const isPinned = pinnedItems.has(pinId);
                 const row = createSpriteRow(target, isPinned);
-                
                 if (isPinned) pinList.appendChild(row.cloneNode(true));
                 if (target.sprite.name.toLowerCase().includes(searchTerm)) spriteList.appendChild(row);
             }
         });
-
         if (pinList.innerHTML === '') pinList.innerHTML = '<div style="font-size:9px; color:#444; text-align:center;">No items pinned.</div>';
     }
 
