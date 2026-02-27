@@ -88,11 +88,26 @@
     document.body.appendChild(menu);
 
     // --- MISC HANDLERS ---
-    document.getElementById('max-clones-slider').oninput = (e) => {
-        const val = Number(e.target.value);
-        vm.runtime.MAX_CLONES = val;
-        document.getElementById('max-clone-num').innerText = val;
-    };
+// Replace the old .oninput for speed-hack with this:
+document.getElementById('speed-hack').oninput = (e) => {
+    const fps = Number(e.target.value);
+    
+    // 1. If TurboWarp API exists, use it (The "Clean" way)
+    if (vm.setFramerate) {
+        vm.setFramerate(fps);
+    } else {
+        // 2. If on official Scratch, we must hijack the interval
+        // We clear the old interval and force a new one
+        vm.runtime.currentStepTime = 1000 / fps;
+        
+        if (vm.runtime._steppingInterval) {
+            clearInterval(vm.runtime._steppingInterval);
+            vm.runtime._steppingInterval = setInterval(() => {
+                vm.runtime._step();
+            }, 1000 / fps);
+        }
+    }
+};
 
     document.getElementById('cam-x').oninput = (e) => { camX = Number(e.target.value); applyCam(); };
     document.getElementById('cam-y').oninput = (e) => { camY = Number(e.target.value); applyCam(); };
