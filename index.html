@@ -4,6 +4,19 @@
   <meta charset="UTF-8">
   <title>Billies Needle | EEEE842</title>
   <style>
+    /* Pulse Animation */
+    @keyframes pulsePurple {
+      0% { border-color: #c300ff; box-shadow: 0 0 20px rgba(195, 0, 255, 0.2); color: #c300ff; }
+      50% { border-color: #ff00ff; box-shadow: 0 0 30px rgba(255, 0, 255, 0.5); color: #ff00ff; }
+      100% { border-color: #c300ff; box-shadow: 0 0 20px rgba(195, 0, 255, 0.2); color: #c300ff; }
+    }
+
+    @keyframes pulseBackground {
+      0% { background: #c300ff; border-color: #c300ff; }
+      50% { background: #ff00ff; border-color: #ff00ff; }
+      100% { background: #c300ff; border-color: #c300ff; }
+    }
+
     body {
       background: #0a0a0a;
       color: #c300ff;
@@ -18,7 +31,7 @@
       display: inline-block;
       padding: 30px;
       border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+      animation: pulsePurple 4s infinite ease-in-out;
     }
 
     h1 { font-size: 42px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 5px; }
@@ -27,7 +40,6 @@
     .inject-btn {
       display: inline-block;
       padding: 15px 30px;
-      background: #c300ff;
       color: #000;
       text-decoration: none;
       font-weight: bold;
@@ -36,12 +48,14 @@
       cursor: move;
       transition: 0.3s;
       border: 2px solid #c300ff;
+      animation: pulseBackground 4s infinite ease-in-out;
     }
 
     .inject-btn:hover {
-      background: #000;
-      color: #c300ff;
-      box-shadow: 0 0 15px #c300ff;
+      background: #000 !important;
+      color: #ff00ff;
+      box-shadow: 0 0 15px #ff00ff;
+      animation: none; /* Stop pulsing on hover for clarity */
     }
 
     .instructions {
@@ -63,13 +77,12 @@
     <h1>Billies Needle</h1>
     <p>Injection Tool for Scratch & TurboWarp</p>
 
-    <!-- The Drag and Drop Bookmarklet -->
     <a id="inject" class="inject-btn" href="">DRAG TO BOOKMARKS</a>
 
     <div class="instructions">
         <strong>HOW TO USE:</strong>
         <ol>
-            <li>Drag the green button above to your <code>Bookmarks Bar</code>.</li>
+            <li>Drag the purple button above to your <code>Bookmarks Bar</code>.</li>
             <li>Open any game on <a href="https://scratch.mit.edu" style="color:#fff">Scratch</a> or <a href="https://turbowarp.org" style="color:#fff">TurboWarp</a>.</li>
             <li>Click the <code>Billies Needle</code> bookmark you just made.</li>
             <li>The visual menu will appear. Search for variables or resize sprites live!</li>
@@ -79,20 +92,16 @@
 
 <script>
 (function() {
-    // URL to your raw injector.js on GitHub
     const GITHUB_RAW_URL = "https://cdn.jsdelivr.net/gh/EEEE842/billies-needle@main/injector.js";
-
     const bookmarklet = 
         "javascript:(function(){" +
         "   var s=document.createElement('script');" +
         "   s.src='" + GITHUB_RAW_URL + "';" +
-        "   s.onerror=function(){alert('Billies Needle: Failed to load script. Check your connection.');};" +
+        "   s.onerror=function(){alert('Billies Needle: Failed to load script.');};" +
         "   document.body.appendChild(s);" +
         "})();";
-
     document.getElementById("inject").href = bookmarklet;
 })();
 </script>
-
 </body>
 </html>
